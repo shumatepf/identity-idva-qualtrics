@@ -1,9 +1,8 @@
 import logging
 import requests
-import re
 import time
 
-from qualtrix import settings
+from qualtrix import settings, error
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ def result_export():
         "format": "json",
         "compress": False,
         "sortByLastModifiedDate": True,
-    }  # , "startDate": "", "endDate": ""
+    }
 
     r = requests.post(
         settings.BASE_URL + f"/surveys/{settings.SURVEY_ID}/export-responses",
@@ -116,7 +115,7 @@ def finalize_session(session_id: str, response_id: str):
     Business logic for ending session, pulling response, and posting to gdrive
     """
     # if not delete_session(session_id):
-    #     return "Not Found sessionId", 400
+    #     raise error.QualtricsError("Not Found sessionId") 
 
     # The session deletion api attempts to delete a session, must poll for a response
     response = ""
@@ -131,8 +130,7 @@ def finalize_session(session_id: str, response_id: str):
 
     print(response)
     if not response or not response["meta"]["httpStatus"] == "200 - OK":
-        survey_answers["status"] = "Survey response not found"
-        return survey_answers, 400
+        raise error.QualtricsError("Survey response not found")
 
     labels = response["result"]["labels"]
 

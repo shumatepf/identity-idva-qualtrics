@@ -2,15 +2,13 @@
 qualtrix rest api
 """
 
-import base64 as base64decoder
-import io
 import logging
 
 import fastapi
-from fastapi import Body, Request
+from fastapi import HTTPException
 from pydantic import BaseModel
 
-from . import client
+from qualtrix import client, error
 
 log = logging.getLogger(__name__)
 
@@ -43,4 +41,7 @@ async def session(request: SessionResponseFlow):
     """
     Router for ending a session, pulling response
     """
-    return client.finalize_session(request.sessionId, request.responseId)
+    try:
+        return client.finalize_session(request.sessionId, request.responseId)
+    except error.QualtricsError as e:
+        raise HTTPException(status_code=400, detail=e.args)
