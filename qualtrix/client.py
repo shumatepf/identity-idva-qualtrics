@@ -74,16 +74,7 @@ def result_export():
     answers = []
     for result in results:
         try:
-            answer = {
-                "ethnicity": result["labels"]["QID12"],
-                "race": result["labels"]["QID36"],
-                "gender": result["labels"]["QID14"],
-                "age": result["values"]["QID15_TEXT"],
-                "browser": result["values"]["QID17_BROWSER"],
-                "version": result["values"]["QID17_VERSION"],
-                "os": result["values"]["QID17_OS"],
-                "resolution": result["values"]["QID17_RESOLUTION"],
-            }
+            answer = get_answer_from_result(result)
             answers.append(answer)
         except KeyError:
             pass
@@ -127,26 +118,32 @@ def finalize_session(session_id: str, response_id: str):
 
     if not response or not response["meta"]["httpStatus"] == "200 - OK":
         raise error.QualtricsError("Survey response not found")
-    
+
     result = response["result"]
-    labels = result["labels"]
     values = result["values"]
 
     # Assign survey response status
     # Qualtrics API returns poorly documented boolean as string - unsure if it returns anything else
     survey_answers["status"] = "Complete" if values["finished"] else "Incomplete"
 
-    answer = {
-        "ethnicity": labels["QID12"],
-        "race": labels["QID36"],
-        "gender": labels["QID14"],
-        "age": values["QID15_TEXT"],
-        "browser": values["QID17_BROWSER"],
-        "version": values["QID17_VERSION"],
-        "os": values["QID17_OS"],
-        "resolution": values["QID17_RESOLUTION"],
-    }
+    answer = get_answer_from_result(result)
 
     survey_answers["response"] = answer
 
     return survey_answers
+
+
+def get_answer_from_result(result):
+    """
+    Helper function to get desired values from a result
+    """
+    return {
+        "ethnicity": result["labels"]["QID12"],
+        "race": result["labels"]["QID36"],
+        "gender": result["labels"]["QID14"],
+        "age": result["values"]["QID15_TEXT"],
+        "browser": result["values"]["QID17_BROWSER"],
+        "version": result["values"]["QID17_VERSION"],
+        "os": result["values"]["QID17_OS"],
+        "resolution": result["values"]["QID17_RESOLUTION"],
+    }
