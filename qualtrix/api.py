@@ -17,24 +17,23 @@ router = fastapi.APIRouter()
 
 @router.post("/bulk-responses")
 async def test():
-
     return client.result_export()
+
 
 @router.post("/response/{responseId}")
 async def test(responseId: str):
+    return client.get_response(responseId)
 
-    response = client.get_response(responseId)
-    print(response)
-    return response
 
 @router.post("/survey-schema")
 async def test():
-
     return client.get_survey_schema()
+
 
 class SessionResponseFlow(BaseModel):
     sessionId: str
     responseId: str
+
 
 @router.post("/finalize-session")
 async def session(request: SessionResponseFlow):
