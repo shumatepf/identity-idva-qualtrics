@@ -26,8 +26,6 @@ def get_survey_schema():
         headers=auth_header,
     )
 
-    print(r)
-
     if r.status_code == 200:
         return r.json()
 
@@ -46,7 +44,6 @@ def result_export():
     )
 
     if r.status_code != 200:
-        print("error")
         return
 
     progress_id = r.json()["result"]["progressId"]
@@ -114,8 +111,8 @@ def finalize_session(session_id: str, response_id: str):
     """
     Business logic for ending session, pulling response, and posting to gdrive
     """
-    # if not delete_session(session_id):
-    #     raise error.QualtricsError("Not Found sessionId") 
+    if not delete_session(session_id):
+        raise error.QualtricsError("Not Found sessionId")
 
     # The session deletion api attempts to delete a session, must poll for a response
     response = ""
@@ -124,36 +121,30 @@ def finalize_session(session_id: str, response_id: str):
         if response:
             break
         else:
-            print("Response still loading...")
+            log.warn(f"Response from id {response_id} not found, trying again.")
         time.sleep(2)
     survey_answers = {"status": "", "response": {}}
 
-    print(response)
     if not response or not response["meta"]["httpStatus"] == "200 - OK":
         raise error.QualtricsError("Survey response not found")
-
-    labels = response["result"]["labels"]
-
+    
     result = response["result"]
+    labels = result["labels"]
+    values = result["values"]
 
     # Assign survey response status
     # Qualtrics API returns poorly documented boolean as string - unsure if it returns anything else
-    try:
-        survey_answers["status"] = (
-            "Complete" if eval(labels["finished"]) else "Incomplete"
-        )
-    except:
-        survey_answers["status"] = labels["finished"]
+    survey_answers["status"] = "Complete" if values["finished"] else "Incomplete"
 
     answer = {
-        "ethnicity": result["labels"]["QID12"],
-        "race": result["labels"]["QID36"],
-        "gender": result["labels"]["QID14"],
-        "age": result["values"]["QID15_TEXT"],
-        "browser": result["values"]["QID17_BROWSER"],
-        "version": result["values"]["QID17_VERSION"],
-        "os": result["values"]["QID17_OS"],
-        "resolution": result["values"]["QID17_RESOLUTION"],
+        "ethnicity": labels["QID12"],
+        "race": labels["QID36"],
+        "gender": labels["QID14"],
+        "age": values["QID15_TEXT"],
+        "browser": values["QID17_BROWSER"],
+        "version": values["QID17_VERSION"],
+        "os": values["QID17_OS"],
+        "resolution": values["QID17_RESOLUTION"],
     }
 
     survey_answers["response"] = answer
