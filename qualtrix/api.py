@@ -7,10 +7,10 @@ import io
 import logging
 
 import fastapi
-from fastapi import Body
-from starlette.requests import Request
+from fastapi import Body, Request
+from pydantic import BaseModel
 
-from . import client, settings
+from . import client
 
 log = logging.getLogger(__name__)
 
@@ -18,17 +18,33 @@ router = fastapi.APIRouter()
 
 
 @router.post("/bulk-responses")
-async def test(surveyId: str):
+async def test():
 
     return client.result_export()
 
-@router.post("/response")
+@router.post("/response/{responseId}")
 async def test(responseId: str):
 
-    client.get_response(responseId)
+    response = client.get_response(responseId)
+    print(response)
+    return response
 
 @router.post("/survey-schema")
-async def test(surveyId: str):
+async def test():
 
-    return client.get_survey_schema(surveyId)
+    return client.get_survey_schema()
 
+@router.post("/session/{sessionId}")
+async def session(sessionId: str):
+    return client.delete_session(sessionId)
+
+class SessionResponseFlow(BaseModel):
+    sessionId: str
+    responseId: str
+
+@router.post("/finalize-session")
+async def session(request: SessionResponseFlow):
+    """
+    Router for ending a session, pulling response
+    """
+    return client.finalize_session(request.sessionId, request.responseId)
