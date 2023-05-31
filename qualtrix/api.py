@@ -34,10 +34,6 @@ async def test():
 
     return client.get_survey_schema()
 
-@router.post("/session/{sessionId}")
-async def session(sessionId: str):
-    return client.delete_session(sessionId)
-
 class SessionResponseFlow(BaseModel):
     sessionId: str
     responseId: str
