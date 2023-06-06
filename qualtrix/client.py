@@ -107,13 +107,13 @@ def finalize_session(session_id: str, response_id: str):
 
     # The session deletion api attempts to delete a session, must poll for a response
     response = ""
-    for i in range(5):
+    for i in range(settings.RETRY_ATTEMPTS):
         response = get_response(response_id)
         if response:
             break
         else:
             log.warn(f"Response from id {response_id} not found, trying again.")
-        time.sleep(2)
+        time.sleep(settings.RETRY_WAIT)
     survey_answers = {"status": "", "response": {}}
 
     if not response or not response["meta"]["httpStatus"] == "200 - OK":
