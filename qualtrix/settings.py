@@ -18,3 +18,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", logging.getLevelName(logging.INFO))
 API_TOKEN = os.getenv("API_TOKEN")
 BASE_URL = os.getenv("BASE_URL")
 SURVEY_ID = os.getenv("SURVEY_ID")
+DIRECTORY_ID = os.getenv("DIRECTORY_ID")
+
+RETRY_ATTEMPTS = 5
+RETRY_WAIT = 2

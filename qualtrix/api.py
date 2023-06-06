@@ -2,15 +2,13 @@
 qualtrix rest api
 """
 
-import base64 as base64decoder
-import io
 import logging
 
 import fastapi
-from fastapi import Body
-from starlette.requests import Request
+from fastapi import HTTPException
+from pydantic import BaseModel
 
-from . import client, settings
+from qualtrix import client, error
 
 log = logging.getLogger(__name__)
 
@@ -18,17 +16,31 @@ router = fastapi.APIRouter()
 
 
 @router.post("/bulk-responses")
-async def test(surveyId: str):
-
+async def test():
     return client.result_export()
 
-@router.post("/response")
-async def test(responseId: str):
 
-    client.get_response(responseId)
+@router.post("/response/{responseId}")
+async def test(responseId: str):
+    return client.get_response(responseId)
+
 
 @router.post("/survey-schema")
-async def test(surveyId: str):
+async def test():
+    return client.get_survey_schema()
 
-    return client.get_survey_schema(surveyId)
 
+class SessionResponseFlow(BaseModel):
+    sessionId: str
+    responseId: str
+
+
+@router.post("/finalize-session")
+async def session(request: SessionResponseFlow):
+    """
+    Router for ending a session, pulling response
+    """
+    try:
+        return client.finalize_session(request.sessionId, request.responseId)
+    except error.QualtricsError as e:
+        raise HTTPException(status_code=400, detail=e.args)
