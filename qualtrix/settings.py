@@ -34,3 +34,4 @@ except (json.JSONDecodeError, KeyError, FileNotFoundError) as err:
 
 RETRY_ATTEMPTS = 5
 RETRY_WAIT = 2
+TIMEOUT = 5

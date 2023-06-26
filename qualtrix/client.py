@@ -16,6 +16,7 @@ def get_response(survey_id: str, response_id: str):
         r = requests.get(
             settings.BASE_URL + f"/surveys/{survey_id}/responses/{response_id}",
             headers=auth_header,
+            timeout=settings.TIMEOUT,
         )
         if r:
             break
@@ -52,6 +53,7 @@ def get_survey_schema(survey_id: str):
     r = requests.get(
         settings.BASE_URL + f"/surveys/{survey_id}/response-schema",
         headers=auth_header,
+        timeout=settings.TIMEOUT,
     )
 
     return r.json()
@@ -68,6 +70,7 @@ def result_export(survey_id: str):
         settings.BASE_URL + f"/surveys/{survey_id}/export-responses",
         headers=auth_header,
         json=r_body,
+        timeout=settings.TIMEOUT,
     )
 
     if r.status_code != 200:
@@ -79,6 +82,7 @@ def result_export(survey_id: str):
         r = requests.get(
             settings.BASE_URL + f"/surveys/{survey_id}/export-responses/{progress_id}",
             headers=auth_header,
+            timeout=settings.TIMEOUT,
         )
         status = r.json()["result"]["status"]
 
@@ -93,6 +97,7 @@ def result_export(survey_id: str):
     r = requests.get(
         settings.BASE_URL + f"/surveys/{survey_id}/export-responses/{file_id}/file",
         headers=auth_header,
+        timeout=settings.TIMEOUT,
     )
 
     results = r.json()["responses"]
@@ -117,7 +122,7 @@ def delete_session(survey_id: str, session_id: str):
     r_body = {"close": "true"}
 
     url = settings.BASE_URL + f"/surveys/{survey_id}/sessions/{session_id}"
-    r = requests.post(url, headers=auth_header, json=r_body)
+    r = requests.post(url, headers=auth_header, json=r_body, timeout=settings.TIMEOUT)
 
     return r.json()
 
