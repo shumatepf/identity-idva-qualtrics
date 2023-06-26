@@ -42,7 +42,12 @@ def get_response(survey_id: str, response_id: str):
     # Qualtrics API returns poorly documented boolean as string - unsure if it returns anything else
     survey_answers["status"] = "Complete" if values["finished"] else "Incomplete"
 
-    answer = get_answer_from_result(result)
+    answer = None
+
+    try:
+        answer = get_answer_from_result(result)
+    except KeyError:
+        answer = result
 
     survey_answers["response"] = answer
 
