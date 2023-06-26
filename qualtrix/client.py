@@ -11,26 +11,53 @@ log = logging.getLogger(__name__)
 auth_header = {"X-API-TOKEN": settings.API_TOKEN}
 
 
-def get_response(response_id: str):
+def get_response(survey_id: str, response_id: str):
+    for i in range(settings.RETRY_ATTEMPTS):
+        r = requests.get(
+            settings.BASE_URL + f"/surveys/{survey_id}/responses/{response_id}",
+            headers=auth_header,
+        )
+        if r:
+            break
+        else:
+            log.warn(f"Response from id {response_id} not found, trying again.")
+        time.sleep(settings.RETRY_WAIT)
+
+    survey_answers = {"status": "", "response": {}}
+
+    response = r.json()
+
+    if (
+        r.status_code != 200
+        or not response
+        or not response["meta"]["httpStatus"] == "200 - OK"
+    ):
+        raise error.QualtricsError("Survey response not found")
+
+    result = response["result"]
+    values = result["values"]
+
+    # Assign survey response status
+    # Qualtrics API returns poorly documented boolean as string - unsure if it returns anything else
+    survey_answers["status"] = "Complete" if values["finished"] else "Incomplete"
+
+    answer = get_answer_from_result(result)
+
+    survey_answers["response"] = answer
+
+    return survey_answers
+
+
+def get_survey_schema(survey_id: str):
     r = requests.get(
-        settings.BASE_URL + f"/surveys/{settings.SURVEY_ID}/responses/{response_id}",
+        settings.BASE_URL + f"/surveys/{survey_id}/response-schema",
         headers=auth_header,
     )
-    if r.status_code == 200:
-        return r.json()
+
+    return r.json()
 
 
-def get_survey_schema():
-    r = requests.get(
-        settings.BASE_URL + f"/surveys/{settings.SURVEY_ID}/response-schema",
-        headers=auth_header,
-    )
-
-    if r.status_code == 200:
-        return r.json()
-
-
-def result_export():
+def result_export(survey_id: str):
     r_body = {
         "format": "json",
         "compress": False,
@@ -38,7 +65,7 @@ def result_export():
     }
 
     r = requests.post(
-        settings.BASE_URL + f"/surveys/{settings.SURVEY_ID}/export-responses",
+        settings.BASE_URL + f"/surveys/{survey_id}/export-responses",
         headers=auth_header,
         json=r_body,
     )
@@ -50,8 +77,7 @@ def result_export():
 
     while True:
         r = requests.get(
-            settings.BASE_URL
-            + f"/surveys/{settings.SURVEY_ID}/export-responses/{progress_id}",
+            settings.BASE_URL + f"/surveys/{survey_id}/export-responses/{progress_id}",
             headers=auth_header,
         )
         status = r.json()["result"]["status"]
@@ -65,8 +91,7 @@ def result_export():
             time.sleep(1)
 
     r = requests.get(
-        settings.BASE_URL
-        + f"/surveys/{settings.SURVEY_ID}/export-responses/{file_id}/file",
+        settings.BASE_URL + f"/surveys/{survey_id}/export-responses/{file_id}/file",
         headers=auth_header,
     )
 
@@ -82,7 +107,7 @@ def result_export():
     return answers
 
 
-def delete_session(session_id: str):
+def delete_session(survey_id: str, session_id: str):
     """
     POST /surveys/{surveyId}/sessions/{sessionId}
     body {
@@ -91,46 +116,10 @@ def delete_session(session_id: str):
     """
     r_body = {"close": "true"}
 
-    url = settings.BASE_URL + f"/surveys/{settings.SURVEY_ID}/sessions/{session_id}"
+    url = settings.BASE_URL + f"/surveys/{survey_id}/sessions/{session_id}"
     r = requests.post(url, headers=auth_header, json=r_body)
 
-    if r.status_code == 200:
-        return r.json()
-
-
-def finalize_session(session_id: str, response_id: str):
-    """
-    Business logic for ending session, pulling response, and posting to gdrive
-    """
-    if not delete_session(session_id):
-        raise error.QualtricsError("Not Found sessionId")
-
-    # The session deletion api attempts to delete a session, must poll for a response
-    response = ""
-    for i in range(settings.RETRY_ATTEMPTS):
-        response = get_response(response_id)
-        if response:
-            break
-        else:
-            log.warn(f"Response from id {response_id} not found, trying again.")
-        time.sleep(settings.RETRY_WAIT)
-    survey_answers = {"status": "", "response": {}}
-
-    if not response or not response["meta"]["httpStatus"] == "200 - OK":
-        raise error.QualtricsError("Survey response not found")
-
-    result = response["result"]
-    values = result["values"]
-
-    # Assign survey response status
-    # Qualtrics API returns poorly documented boolean as string - unsure if it returns anything else
-    survey_answers["status"] = "Complete" if values["finished"] else "Incomplete"
-
-    answer = get_answer_from_result(result)
-
-    survey_answers["response"] = answer
-
-    return survey_answers
+    return r.json()
 
 
 def get_answer_from_result(result):
