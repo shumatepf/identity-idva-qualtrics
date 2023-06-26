@@ -31,3 +31,5 @@ jobs:
 
       - name: Deploy application
         run: cf push --vars-file vars.yaml --var ENVIRONMENT=${{ steps.cf-setup.outputs.target-environment }} --strategy rolling
+      - name: Add network policies
+        run: cf add-network-policy qualtrix outbound-proxy -s dev-public --protocol tcp --port 8080
