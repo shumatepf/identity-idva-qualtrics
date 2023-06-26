@@ -15,6 +15,8 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", logging.getLevelName(logging.INFO))
 
+API_TOKEN = None
+
 try:
     vcap_services = os.getenv("VCAP_SERVICES")
     config = {}
