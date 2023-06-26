@@ -15,10 +15,23 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", logging.getLevelName(logging.INFO))
 
-API_TOKEN = os.getenv("API_TOKEN")
-BASE_URL = os.getenv("BASE_URL")
-SURVEY_ID = os.getenv("SURVEY_ID")
-DIRECTORY_ID = os.getenv("DIRECTORY_ID")
+try:
+    vcap_services = os.getenv("VCAP_SERVICES")
+    config = {}
+    if vcap_services:
+        user_services = json.loads(vcap_services)["user-provided"]
+        for service in user_services:
+            if service["name"] == "qualtrix":
+                log.info("Loading credentials from env var")
+                config = service["credentials"]
+                break
+    API_TOKEN = config["api_token"]
+    BASE_URL = config["base_url"]
+    DIRECTORY_ID = config["directory_id"]
+except (json.JSONDecodeError, KeyError, FileNotFoundError) as err:
+    log.warning("Unable to load credentials from VCAP_SERVICES")
+    log.debug("Error: %s", str(err))
 
 RETRY_ATTEMPTS = 5
 RETRY_WAIT = 2
+TIMEOUT = 5
