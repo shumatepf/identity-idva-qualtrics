@@ -8,3 +8,4 @@ qualtrix/__pycache__/
 requirements-dev.txt
 tests/
 vars.yaml
+.vscode
