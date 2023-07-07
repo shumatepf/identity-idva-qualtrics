@@ -139,9 +139,6 @@ def get_answer_from_result(result):
     Helper function to get desired values from a result
     """
 
-    with open("response.json") as file:
-        result = json.load(file)["result"]
-
     labels = result["labels"]
     values = result["values"]
 
