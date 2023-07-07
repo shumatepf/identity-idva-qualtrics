@@ -1,6 +1,8 @@
 import logging
 import requests
 import time
+import re
+import json
 
 from qualtrix import settings, error
 
@@ -136,13 +138,29 @@ def get_answer_from_result(result):
     """
     Helper function to get desired values from a result
     """
+
+    labels = result["labels"]
+    values = result["values"]
+
+    skin_tone = labels["QID67"]
+
+    if skin_tone != "Prefer not to answer":
+        # searches for alt="{value} - *"
+        pattern = rf"alt\s*=\s*['\"](.*?)(\s-)"
+        match = re.search(pattern, skin_tone, re.IGNORECASE)
+
+        if match:
+            skin_tone = match.group(1)
+
     return {
-        "ethnicity": result["labels"]["QID12"],
-        "race": result["labels"]["QID36"],
-        "gender": result["labels"]["QID14"],
-        "age": result["values"]["QID15_TEXT"],
-        "browser": result["values"]["QID17_BROWSER"],
-        "version": result["values"]["QID17_VERSION"],
-        "os": result["values"]["QID17_OS"],
-        "resolution": result["values"]["QID17_RESOLUTION"],
+        "ethnicity": labels["QID12"],
+        "race": labels["QID36"],
+        "gender": labels["QID14"],
+        "age": values["QID15_TEXT"],
+        "browser": values["QID17_BROWSER"],
+        "version": values["QID17_VERSION"],
+        "os": values["QID17_OS"],
+        "resolution": values["QID17_RESOLUTION"],
+        "skin_tone": skin_tone,
+        "image_redacted_request": labels["QID53"],
     }
