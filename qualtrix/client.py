@@ -142,16 +142,6 @@ def get_answer_from_result(result):
     labels = result["labels"]
     values = result["values"]
 
-    skin_tone = labels["QID67"]
-
-    if skin_tone != "Prefer not to answer":
-        # searches for alt="{value} - *"
-        pattern = rf"alt\s*=\s*['\"](.*?)(\s-)"
-        match = re.search(pattern, skin_tone, re.IGNORECASE)
-
-        if match:
-            skin_tone = match.group(1)
-
     return {
         "ethnicity": labels["QID12"],
         "race": labels["QID36"],
@@ -163,6 +153,6 @@ def get_answer_from_result(result):
         "version": values["QID17_VERSION"],
         "os": values["QID17_OS"],
         "resolution": values["QID17_RESOLUTION"],
-        "skin_tone": skin_tone,
+        "skin_tone": labels["QID67"],
         "image_redacted_request": labels["QID53"],
     }
