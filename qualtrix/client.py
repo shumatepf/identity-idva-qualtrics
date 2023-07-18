@@ -26,7 +26,7 @@ def get_response(survey_id: str, response_id: str):
             log.warn(f"Response from id {response_id} not found, trying again.")
         time.sleep(settings.RETRY_WAIT)
 
-    survey_answers = {"status": "", "response": {}}
+    survey_answers = {"result": {"status": "", "response": {}}, "participant": {}}
 
     response = r.json()
 
@@ -42,16 +42,20 @@ def get_response(survey_id: str, response_id: str):
 
     # Assign survey response status
     # Qualtrics API returns poorly documented boolean as string - unsure if it returns anything else
-    survey_answers["status"] = "Complete" if values["finished"] else "Incomplete"
+    survey_answers["result"]["status"] = (
+        "Complete" if values["finished"] else "Incomplete"
+    )
 
-    answer = None
+    answer, participant = None, None
 
     try:
         answer = get_answer_from_result(result)
+        participant = get_participant_from_result(result)
     except KeyError:
-        answer = result
+        survey_answers = result
 
-    survey_answers["response"] = answer
+    survey_answers["result"]["response"] = answer
+    survey_answers["participant"] = participant
 
     return survey_answers
 
@@ -155,4 +159,14 @@ def get_answer_from_result(result):
         "resolution": values["QID17_RESOLUTION"],
         "skin_tone": labels["QID67"],
         "image_redacted_request": labels["QID53"],
+    }
+
+
+def get_participant_from_result(result):
+    values = result["values"]
+    return {
+        "first": values["recipientFirstName"],
+        "last": values["recipientLastName"],
+        "email": values["recipientEmail"],
+        "time": values["endDate"],
     }
